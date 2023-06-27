@@ -27,7 +27,7 @@ preciosHistoricos$producto <- as.factor(preciosHistoricos$producto)
 # --------------------------------------------
 # selecciono un dataset menor con las cols que necesito
 precios <- preciosHistoricos %>% 
-  select(fecha_vigencia ,producto, precio) 
+  select(fecha_vigencia, producto, precio) 
 
 precios <- precios %>% 
   filter(format(fecha_vigencia,"%Y") > "2000")
@@ -54,25 +54,37 @@ precios$yearMonth <- format(precios$fecha_vigencia, "%Y/%m")
 # PREGUNTA A CONTESTAR: 
 # ¿Cuál es la evolución del precio promedio de los productos  a lo largo del tiempo?
 
-prom_producto <- precios %>% 
+median_producto <- precios %>% 
   group_by(yearMonth, producto) %>% 
-  summarise(prom_precio = mean(precio)) 
+  summarise(median_precio = median(precio)) 
   
-prom_producto$yearMonth <- as.Date(paste(prom_producto$yearMonth,"01",sep="/"))
+median_producto$yearMonth <- as.Date(paste(median_producto$yearMonth,"01",sep="/"))
 
-# grafico 1
-ggplot(prom_producto, aes(x = yearMonth, y = prom_precio, color = producto)) +
-  geom_point() +
-  labs(x = "Fecha", y = "Precio promedio", color = "Producto") +
-  theme_minimal() +
-  scale_x_date(labels = date_format("%Y"))
-
-
-# grafico 2
-ggplot(data = prom_producto, aes(x = producto, y = prom_precio, fill = producto)) +
-  geom_boxplot() +
-  labs(x = "Producto", y = "Precio promedio", fill = "Producto") +
+# analizo outliers 
+ggplot(data = median_producto, aes(x = producto, y = median_precio, fill = producto)) +
+geom_boxplot() +
+  labs(x = "Producto", y = "Precio medio", fill = "Producto") +
   theme_minimal()
+
+# elimino outliers
+median_producto <- median_producto %>%  
+  filter(median_precio < 150 | producto == "GNC" & median_precio < 60)
+
+# vuelvo a realizar el mismo grafico
+ggplot(data = median_producto, aes(x = producto, y = median_precio, fill = producto)) +
+  geom_boxplot() +
+  labs(x = "Producto", y = "Precio medio", fill = "Producto") +
+  theme_minimal()
+
+# dot plot
+ggplot(median_producto, aes(x = yearMonth, y = median_precio, color = producto)) +
+  geom_point() +
+  labs(x = "Fecha", y = "Precio medio", color = "Producto") +
+  scale_x_date(date_labels = "%Y", date_breaks = "1 year") +
+  theme_minimal()
+
+
+
 
 
 
